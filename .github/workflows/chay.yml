@@ -1,0 +1,65 @@
+name: chạy việc của tinhca-web
+# Máy chạy miễn phí (kho công khai) làm hộ các việc nặng của kho riêng tư tinhca-web:
+# thu giọng ai33, làm nhạc, chèn điệp khúc, dựng video… rồi ghi kết quả về tinhca-web.
+# Chỉ chủ kho bấm chạy được (workflow_dispatch). Khóa nằm trong Secrets, không ghi vào mã.
+on:
+  workflow_dispatch:
+    inputs:
+      lenh:
+        description: 'Lệnh chạy trong thư mục tinhca-web (vd python3 tools/ai33/chay.py tools/ai33/viec/x.json)'
+        required: true
+      luu:
+        description: 'Các đường dẫn cần ghi về tinhca-web (cách nhau bằng dấu cách)'
+        required: false
+        default: ''
+      cai:
+        description: 'Gói pip cần cài thêm'
+        required: false
+        default: 'boto3 numpy'
+      ten:
+        description: 'Ghi chú cho lần chạy'
+        required: false
+        default: ''
+run-name: ${{ github.event.inputs.ten || github.event.inputs.lenh }}
+jobs:
+  chay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    steps:
+      - name: Lấy kho tinhca-web
+        env:
+          TK: ${{ secrets.TINHCA_TOKEN }}
+        run: |
+          T=$(printf %s "$TK" | tr -d '[:space:]'); echo "::add-mask::$T"
+          git clone -q --depth 2 "https://x-access-token:${T}@github.com/vohoaphuc85-eng/tinhca-web.git" web
+      - name: Cài công cụ
+        env:
+          CAI: ${{ github.event.inputs.cai }}
+        run: |
+          sudo apt-get -qq update && sudo apt-get -qq install -y ffmpeg fonts-dejavu-core >/dev/null
+          pip install -q $CAI
+      - name: Chạy
+        working-directory: web
+        env:
+          LENH: ${{ github.event.inputs.lenh }}
+          K_AI33: ${{ secrets.AI33_API_KEY }}
+          K_R2A: ${{ secrets.R2_ACCOUNT_ID }}
+          K_R2I: ${{ secrets.R2_ACCESS_KEY_ID }}
+          K_R2S: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+        run: |
+          s() { printf %s "$1" | tr -d '[:space:]'; }
+          export AI33_API_KEY=$(s "$K_AI33") R2_ACCOUNT_ID=$(s "$K_R2A") R2_ACCESS_KEY_ID=$(s "$K_R2I") R2_SECRET_ACCESS_KEY=$(s "$K_R2S")
+          for v in "$AI33_API_KEY" "$R2_ACCESS_KEY_ID" "$R2_SECRET_ACCESS_KEY"; do echo "::add-mask::$v"; done
+          bash -c "$LENH"
+      - name: Ghi kết quả về tinhca-web
+        if: always() && github.event.inputs.luu != ''
+        working-directory: web
+        env:
+          LUU: ${{ github.event.inputs.luu }}
+          TEN: ${{ github.event.inputs.ten }}
+        run: |
+          git config user.name "tinhca-bot"; git config user.email "bot@tinhca.org"
+          for p in $LUU; do [ -e "$p" ] && git add "$p"; done; true
+          git diff --cached --quiet && { echo "không có gì mới"; exit 0; }
+          git commit -q -m "tinhca-may: ${TEN:-kết quả} [CI Skip]"
+          for i in 1 2 3 4 5 6; do git pull -q --rebase && git push -q && exit 0; sleep $((RANDOM % 15 + 5)); done; exit 1
