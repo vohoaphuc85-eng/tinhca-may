@@ -1,0 +1,20 @@
+name: chép tệp ai33 lên kho media
+on:
+  workflow_dispatch:
+    inputs:
+      ds:
+        description: 'url khóa; url khóa; ...'
+        required: true
+jobs:
+  chep:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install -q boto3
+      - env:
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          DS: ${{ github.event.inputs.ds }}
+        run: python3 tools/chuyen_tep.py "$DS"
