@@ -16,6 +16,10 @@ on:
         description: 'Gói pip cần cài thêm'
         required: false
         default: 'boto3 numpy'
+      tep:
+        description: 'Thư mục (trong tinhca-web) để tải về dạng artifact, giữ 3 ngày'
+        required: false
+        default: ''
       ten:
         description: 'Ghi chú cho lần chạy'
         required: false
@@ -51,6 +55,14 @@ jobs:
           export AI33_API_KEY=$(s "$K_AI33") R2_ACCOUNT_ID=$(s "$K_R2A") R2_ACCESS_KEY_ID=$(s "$K_R2I") R2_SECRET_ACCESS_KEY=$(s "$K_R2S")
           for v in "$AI33_API_KEY" "$R2_ACCESS_KEY_ID" "$R2_SECRET_ACCESS_KEY"; do echo "::add-mask::$v"; done
           bash -c "$LENH"
+      - name: Tải kết quả về (artifact)
+        if: always() && github.event.inputs.tep != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: ket-qua
+          path: web/${{ github.event.inputs.tep }}
+          retention-days: 3
+          compression-level: 0
       - name: Ghi kết quả về tinhca-web
         if: always() && github.event.inputs.luu != ''
         working-directory: web
