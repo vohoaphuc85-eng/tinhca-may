@@ -25,6 +25,8 @@ on:
         required: false
         default: ''
 run-name: ${{ github.event.inputs.ten || github.event.inputs.lenh }}
+permissions:
+  contents: write
 jobs:
   chay:
     runs-on: ubuntu-latest
@@ -63,6 +65,16 @@ jobs:
           path: web/${{ github.event.inputs.tep }}
           retention-days: 3
           compression-level: 0
+      - name: Đưa kết quả lên Release (để tải về máy Vương)
+        if: always() && github.event.inputs.tep != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TEP: ${{ github.event.inputs.tep }}
+        run: |
+          cd "web/$TEP" || exit 0
+          for d in */; do d=${d%/}; (cd "$d" && zip -0 -qr "$GITHUB_WORKSPACE/goi-$d.zip" .); done
+          ls -la $GITHUB_WORKSPACE/*.zip
+          gh release create "goi-${{ github.run_id }}" $GITHUB_WORKSPACE/goi-*.zip --repo "${{ github.repository }}" --title "Gói video ${{ github.run_id }}" --notes "Tạm, xóa sau khi tải" --prerelease
       - name: Ghi kết quả về tinhca-web
         if: always() && github.event.inputs.luu != ''
         working-directory: web
