@@ -71,6 +71,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           TEP: ${{ github.event.inputs.tep }}
         run: |
+          for r in $(gh release list --repo "${{ github.repository }}" --limit 50 --json tagName -q '.[].tagName' | grep '^goi-'); do gh release delete "$r" --repo "${{ github.repository }}" --yes --cleanup-tag || true; done
           cd "web/$TEP" || exit 0
           for d in */; do d=${d%/}; (cd "$d" && zip -0 -qr "$GITHUB_WORKSPACE/goi-$d.zip" .); done
           ls -la $GITHUB_WORKSPACE/*.zip
