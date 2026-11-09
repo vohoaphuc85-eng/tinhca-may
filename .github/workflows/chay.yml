@@ -3,6 +3,8 @@ name: chạy việc của tinhca-web
 # thu giọng ai33, làm nhạc, chèn điệp khúc, dựng video… rồi ghi kết quả về tinhca-web.
 # Chỉ chủ kho bấm chạy được (workflow_dispatch). Khóa nằm trong Secrets, không ghi vào mã.
 on:
+  schedule:
+    - cron: '17 3 * * *'   # 10:17 giờ VN: lấy clip Muse làm lúc 8:00 về (tools/muse/lay.py)
   workflow_dispatch:
     inputs:
       lenh:
@@ -24,7 +26,7 @@ on:
         description: 'Ghi chú cho lần chạy'
         required: false
         default: ''
-run-name: ${{ github.event.inputs.ten || github.event.inputs.lenh }}
+run-name: ${{ github.event.inputs.ten || github.event.inputs.lenh || 'Lấy clip Muse hằng ngày' }}
 permissions:
   contents: write
 jobs:
@@ -40,14 +42,14 @@ jobs:
           git clone -q --depth 2 "https://x-access-token:${T}@github.com/vohoaphuc85-eng/tinhca-web.git" web
       - name: Cài công cụ
         env:
-          CAI: ${{ github.event.inputs.cai }}
+          CAI: ${{ github.event.inputs.cai || 'boto3' }}
         run: |
           sudo apt-get -qq update && sudo apt-get -qq install -y ffmpeg fonts-dejavu-core >/dev/null
           pip install -q $CAI
       - name: Chạy
         working-directory: web
         env:
-          LENH: ${{ github.event.inputs.lenh }}
+          LENH: ${{ github.event.inputs.lenh || 'python3 tools/muse/lay.py' }}
           K_AI33: ${{ secrets.AI33_API_KEY }}
           K_R2A: ${{ secrets.R2_ACCOUNT_ID }}
           K_R2I: ${{ secrets.R2_ACCESS_KEY_ID }}
@@ -80,7 +82,7 @@ jobs:
         if: always() && github.event.inputs.luu != ''
         working-directory: web
         env:
-          LUU: ${{ github.event.inputs.luu }}
+          LUU: ${{ github.event.inputs.luu || 'tools/muse' }}
           TEN: ${{ github.event.inputs.ten }}
         run: |
           git config user.name "tinhca-bot"; git config user.email "bot@tinhca.org"
