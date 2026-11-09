@@ -79,7 +79,7 @@ jobs:
           ls -la $GITHUB_WORKSPACE/*.zip
           gh release create "goi-${{ github.run_id }}" $GITHUB_WORKSPACE/goi-*.zip --repo "${{ github.repository }}" --title "Gói video ${{ github.run_id }}" --notes "Tạm, xóa sau khi tải" --prerelease
       - name: Ghi kết quả về tinhca-web
-        if: always() && github.event.inputs.luu != ''
+        if: always() && (github.event_name == 'schedule' || github.event.inputs.luu != '')
         working-directory: web
         env:
           LUU: ${{ github.event.inputs.luu || 'tools/muse' }}
