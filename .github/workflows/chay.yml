@@ -78,7 +78,7 @@ jobs:
         run: |
           for r in $(gh release list --repo "${{ github.repository }}" --limit 50 --json tagName -q '.[].tagName' | grep '^goi-'); do gh release delete "$r" --repo "${{ github.repository }}" --yes --cleanup-tag || true; done
           cd "web/$TEP" || exit 0
-          for d in */; do d=${d%/}; (cd "$d" && zip -0 -qr "$GITHUB_WORKSPACE/goi-$d.zip" .); done
+          export LC_ALL=C.UTF-8; for d in */; do d=${d%/}; (cd "$d" && zip -0 -qr -UN=UTF8 "$GITHUB_WORKSPACE/goi-$d.zip" .); done
           ls -la $GITHUB_WORKSPACE/*.zip
           gh release create "goi-${{ github.run_id }}" $GITHUB_WORKSPACE/goi-*.zip --repo "${{ github.repository }}" --title "Gói video ${{ github.run_id }}" --notes "Tạm, xóa sau khi tải" --prerelease
       - name: Ghi kết quả về tinhca-web
