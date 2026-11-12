@@ -1,0 +1,57 @@
+name: Đăng YouTube mỗi ngày (Trueway Radio + Vương Tivi)
+on:
+  schedule:
+    - cron: '0 12 * * *'
+    - cron: '30 12 * * *'
+  workflow_dispatch:
+    inputs:
+      viec: {description: 'lc = Trueway Lời Chúa, vtv = Vương Tivi, kiem = chỉ kiểm tra kết nối', required: true, default: 'kiem'}
+      ngay: {description: 'Ngày đăng YYYY-MM-DD (bỏ trống = ngày mai)', required: false}
+concurrency: dang-youtube-${{ github.event.inputs.viec || github.event.schedule }}
+jobs:
+  lam:
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    env:
+      R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+      R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
+      YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
+      YT_TRUEWAY_REFRESH: ${{ secrets.YT_TRUEWAY_REFRESH }}
+      YT_VUONGTV_REFRESH: ${{ secrets.YT_VUONGTV_REFRESH }}
+      CF_AI_TOKEN: ${{ secrets.CF_AI_TOKEN }}
+    steps:
+      - name: Lấy kho tinhca-web
+        uses: actions/checkout@v4
+        with:
+          repository: vohoaphuc85-eng/tinhca-web
+          token: ${{ secrets.TINHCA_TOKEN }}
+          path: web
+      - name: Chọn việc
+        id: v
+        run: |
+          V="${{ github.event.inputs.viec }}"
+          if [ -z "$V" ]; then [ "${{ github.event.schedule }}" = "0 12 * * *" ] && V=lc || V=vtv; fi
+          echo "viec=$V" >> $GITHUB_OUTPUT
+      - name: Cài công cụ
+        if: steps.v.outputs.viec != 'kiem'
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg >/dev/null; pip install -q faster-whisper boto3 pillow numpy
+      - name: Làm video và hẹn đăng
+        working-directory: web
+        run: |
+          case "${{ steps.v.outputs.viec }}" in
+            lc)  bash tools/may/lc_ngay.sh "${{ github.event.inputs.ngay }}" ;;
+            vtv) bash tools/may/vtv_ngay.sh "${{ github.event.inputs.ngay }}" ;;
+            *)   python3 tools/video/yt_dang.py kiem trueway vuongtv ;;
+          esac
+      - name: Ghi sổ về tinhca-web
+        if: always() && steps.v.outputs.viec != 'kiem'
+        working-directory: web
+        run: |
+          git config user.name "tinhca-bot"; git config user.email "bot@tinhca.org"
+          git add tools/video/ket-qua tools/video/yt-da-dang.json tools/loichua/hinh-ai 2>/dev/null || true
+          [ -f tools/video/yt-ds.json ] && git add tools/video/yt-ds.json
+          git diff --cached --quiet && exit 0
+          git commit -q -m "YouTube ${{ steps.v.outputs.viec }}: video + hẹn đăng (máy tinhca-may) [CI Skip]"
+          for i in 1 2 3 4 5; do git pull --rebase -q && git push -q && exit 0; sleep 10; done; exit 1
