@@ -20,6 +20,7 @@ jobs:
       YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
       YT_TRUEWAY_REFRESH: ${{ secrets.YT_TRUEWAY_REFRESH }}
       YT_VUONGTV_REFRESH: ${{ secrets.YT_VUONGTV_REFRESH }}
+      YT_KARAOKE_REFRESH: ${{ secrets.YT_KARAOKE_REFRESH }}
       CF_AI_TOKEN: ${{ secrets.CF_AI_TOKEN }}
     steps:
       - name: Lấy kho tinhca-web
