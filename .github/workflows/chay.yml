@@ -57,10 +57,12 @@ jobs:
           K_YTI: ${{ secrets.YT_CLIENT_ID }}
           K_YTS: ${{ secrets.YT_CLIENT_SECRET }}
           K_YTK: ${{ secrets.YT_KARAOKE_REFRESH }}
+          K_YTT: ${{ secrets.YT_TRUEWAY_REFRESH }}
+          K_YTV: ${{ secrets.YT_VUONGTV_REFRESH }}
         run: |
           s() { printf %s "$1" | tr -d '[:space:]'; }
-          export AI33_API_KEY=$(s "$K_AI33") R2_ACCOUNT_ID=$(s "$K_R2A") R2_ACCESS_KEY_ID=$(s "$K_R2I") R2_SECRET_ACCESS_KEY=$(s "$K_R2S") YT_CLIENT_ID=$(s "$K_YTI") YT_CLIENT_SECRET=$(s "$K_YTS") YT_KARAOKE_REFRESH=$(s "$K_YTK")
-          for v in "$AI33_API_KEY" "$R2_ACCESS_KEY_ID" "$R2_SECRET_ACCESS_KEY" "$YT_CLIENT_SECRET" "$YT_KARAOKE_REFRESH"; do echo "::add-mask::$v"; done
+          export AI33_API_KEY=$(s "$K_AI33") R2_ACCOUNT_ID=$(s "$K_R2A") R2_ACCESS_KEY_ID=$(s "$K_R2I") R2_SECRET_ACCESS_KEY=$(s "$K_R2S") YT_CLIENT_ID=$(s "$K_YTI") YT_CLIENT_SECRET=$(s "$K_YTS") YT_KARAOKE_REFRESH=$(s "$K_YTK") YT_TRUEWAY_REFRESH=$(s "$K_YTT") YT_VUONGTV_REFRESH=$(s "$K_YTV")
+          for v in "$AI33_API_KEY" "$R2_ACCESS_KEY_ID" "$R2_SECRET_ACCESS_KEY" "$YT_CLIENT_SECRET" "$YT_KARAOKE_REFRESH" "$YT_TRUEWAY_REFRESH" "$YT_VUONGTV_REFRESH"; do echo "::add-mask::$v"; done
           bash -c "$LENH"
       - name: Tải kết quả về (artifact)
         if: always() && github.event.inputs.tep != ''
