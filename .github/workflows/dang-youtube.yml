@@ -51,7 +51,7 @@ jobs:
         run: |
           git config user.name "tinhca-bot"; git config user.email "bot@tinhca.org"
           git add tools/video/ket-qua tools/video/yt-da-dang.json tools/loichua/hinh-ai 2>/dev/null || true
-          [ -f tools/video/yt-ds.json ] && git add tools/video/yt-ds.json
+          [ -f tools/video/yt-ds.json ] && git add tools/video/yt-ds.json; [ -f tools/video/yt-bia-ds.json ] && git add tools/video/yt-bia-ds.json
           git diff --cached --quiet && exit 0
           git commit -q -m "YouTube ${{ steps.v.outputs.viec }}: video + hẹn đăng (máy tinhca-may) [CI Skip]"
           for i in 1 2 3 4 5; do git pull --rebase -q && git push -q && exit 0; sleep 10; done; exit 1
