@@ -51,9 +51,9 @@ jobs:
         if: always() && steps.v.outputs.viec != 'kiem'
         working-directory: web
         run: |
-          git config user.name "tinhca-bot"; git config user.email "bot@tinhca.org"
+          git config user.name "tinhca-bot"; git config user.email "bot@tinhca.org"; git config merge.hopjson.driver "python3 tools/video/hop_json.py %O %A %B"
           git add tools/video/ket-qua tools/video/yt-da-dang.json tools/video/vq-cho.json tools/loichua/hinh-ai 2>/dev/null || true
           [ -f tools/video/yt-ds.json ] && git add tools/video/yt-ds.json; [ -f tools/video/yt-bia-ds.json ] && git add tools/video/yt-bia-ds.json; git add site/assets/img/ns tools/nhacsi2/anh-cu tools/video/anh-them tools/kho-canh/nguon.json tools/kho-canh/xem 2>/dev/null || true
           git diff --cached --quiet && exit 0
           git commit -q -m "YouTube ${{ steps.v.outputs.viec }}: video + hẹn đăng (máy tinhca-may) [CI Skip]"
-          for i in 1 2 3 4 5; do git pull --rebase --autostash -q && git push -q && exit 0; sleep 10; done; exit 1
+          for i in 1 2 3 4 5; do git pull --rebase --autostash -q && git push -q && exit 0; git rebase --abort 2>/dev/null; sleep $((RANDOM % 20 + 10)); done; exit 1
