@@ -5,6 +5,7 @@ name: chạy việc của tinhca-web
 on:
   schedule:
     - cron: '17 3 * * *'   # 10:17 giờ VN: lấy clip Muse làm lúc 8:00 về (tools/muse/lay.py)
+    - cron: '0 23 * * *'   # 06:00 giờ VN: gửi nhắc mỗi sáng (Lời Chúa + bài mới). 23/11: chuyển từ tinhca-web vì kho riêng tư hết lượt chạy
   workflow_dispatch:
     inputs:
       lenh:
@@ -26,7 +27,7 @@ on:
         description: 'Ghi chú cho lần chạy'
         required: false
         default: ''
-run-name: ${{ github.event.inputs.ten || github.event.inputs.lenh || 'Lấy clip Muse hằng ngày' }}
+run-name: ${{ github.event.inputs.ten || github.event.inputs.lenh || (github.event.schedule == '0 23 * * *' && 'Gửi nhắc mỗi sáng' || 'Lấy clip Muse hằng ngày') }}
 permissions:
   contents: write
 jobs:
@@ -42,14 +43,17 @@ jobs:
           git clone -q --depth 2 "https://x-access-token:${T}@github.com/vohoaphuc85-eng/tinhca-web.git" web
       - name: Cài công cụ
         env:
-          CAI: ${{ github.event.inputs.cai || 'boto3' }}
+          CAI: ${{ github.event.inputs.cai || (github.event.schedule == '0 23 * * *' && 'pywebpush cryptography' || 'boto3') }}
         run: |
           sudo apt-get -qq update && sudo apt-get -qq install -y ffmpeg fonts-dejavu-core >/dev/null
           pip install -q $CAI
       - name: Chạy
         working-directory: web
         env:
-          LENH: ${{ github.event.inputs.lenh || 'python3 tools/muse/lay.py' }}
+          LENH: ${{ github.event.inputs.lenh || (github.event.schedule == '0 23 * * *' && 'python3 tools/push_send.py' || 'python3 tools/muse/lay.py') }}
+          K_HOC: ${{ secrets.HOC_PASS }}
+          VAPID_SUBJECT: mailto:minhvuong200382@gmail.com
+          SITE: https://tinhca.org
           K_AI33: ${{ secrets.AI33_API_KEY }}
           K_R2A: ${{ secrets.R2_ACCOUNT_ID }}
           K_R2I: ${{ secrets.R2_ACCESS_KEY_ID }}
@@ -63,8 +67,8 @@ jobs:
           K_PXB: ${{ secrets.PIXABAY_API_KEY }}
         run: |
           s() { printf %s "$1" | tr -d '[:space:]'; }
-          export AI33_API_KEY=$(s "$K_AI33") R2_ACCOUNT_ID=$(s "$K_R2A") R2_ACCESS_KEY_ID=$(s "$K_R2I") R2_SECRET_ACCESS_KEY=$(s "$K_R2S") YT_CLIENT_ID=$(s "$K_YTI") YT_CLIENT_SECRET=$(s "$K_YTS") YT_KARAOKE_REFRESH=$(s "$K_YTK") YT_TRUEWAY_REFRESH=$(s "$K_YTT") YT_VUONGTV_REFRESH=$(s "$K_YTV") CF_AI_TOKEN=$(s "$K_CFA") PIXABAY_API_KEY=$(s "$K_PXB")
-          for v in "$AI33_API_KEY" "$R2_ACCESS_KEY_ID" "$R2_SECRET_ACCESS_KEY" "$YT_CLIENT_SECRET" "$YT_KARAOKE_REFRESH" "$YT_TRUEWAY_REFRESH" "$YT_VUONGTV_REFRESH" "$CF_AI_TOKEN" "$PIXABAY_API_KEY"; do echo "::add-mask::$v"; done
+          export AI33_API_KEY=$(s "$K_AI33") R2_ACCOUNT_ID=$(s "$K_R2A") R2_ACCESS_KEY_ID=$(s "$K_R2I") R2_SECRET_ACCESS_KEY=$(s "$K_R2S") YT_CLIENT_ID=$(s "$K_YTI") YT_CLIENT_SECRET=$(s "$K_YTS") YT_KARAOKE_REFRESH=$(s "$K_YTK") YT_TRUEWAY_REFRESH=$(s "$K_YTT") YT_VUONGTV_REFRESH=$(s "$K_YTV") CF_AI_TOKEN=$(s "$K_CFA") PIXABAY_API_KEY=$(s "$K_PXB") HOC_PASS=$(s "$K_HOC")
+          for v in "$AI33_API_KEY" "$R2_ACCESS_KEY_ID" "$R2_SECRET_ACCESS_KEY" "$YT_CLIENT_SECRET" "$YT_KARAOKE_REFRESH" "$YT_TRUEWAY_REFRESH" "$YT_VUONGTV_REFRESH" "$CF_AI_TOKEN" "$PIXABAY_API_KEY" "$HOC_PASS"; do echo "::add-mask::$v"; done
           bash -c "$LENH"
       - name: Tải kết quả về (artifact)
         if: always() && github.event.inputs.tep != ''
@@ -86,7 +90,7 @@ jobs:
           ls -la $GITHUB_WORKSPACE/*.zip
           gh release create "goi-${{ github.run_id }}" $GITHUB_WORKSPACE/goi-*.zip --repo "${{ github.repository }}" --title "Gói video ${{ github.run_id }}" --notes "Tạm, xóa sau khi tải" --prerelease
       - name: Ghi kết quả về tinhca-web
-        if: always() && (github.event_name == 'schedule' || github.event.inputs.luu != '')
+        if: always() && ((github.event_name == 'schedule' && github.event.schedule != '0 23 * * *') || github.event.inputs.luu != '')
         working-directory: web
         env:
           LUU: ${{ github.event.inputs.luu || 'tools/muse' }}
